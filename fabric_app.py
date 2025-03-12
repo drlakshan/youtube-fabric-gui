@@ -1,10 +1,34 @@
-# fabric_app.py
 import streamlit as st
 import subprocess
-import re
 import os
-import glob
 import shutil
+
+def extract_video_id(url):
+    """Extract YouTube video ID from URL."""
+    # Regular expressions to match various YouTube URL formats
+    patterns = [
+        r'(?:youtube\.com\/watch\?v=|youtu.be\/|youtube.com\/embed\/)([^&\n?#]+)',
+        r'youtube.com\/shorts\/([^&\n?#]+)'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+def get_youtube_transcript(video_id):
+    """Get transcript from YouTube video."""
+    try:
+        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+        # Combine all transcript pieces into a single text
+        full_transcript = ""
+        for entry in transcript_list:
+            full_transcript += entry['text'] + " "
+        return full_transcript.strip()
+    except Exception as e:
+        st.error(f"Error getting transcript: {str(e)}")
+        return None
 
 def check_dependencies():
     """Check if required dependencies are available."""
@@ -15,12 +39,16 @@ def check_dependencies():
         st.error("""
         The 'fabric' command was not found in your PATH.
         
-        Please make sure:
-        1. You have installed Fabric AI
-        2. Your virtual environment is activated (if you're using one)
-        3. The fabric command is available in your PATH
+        To install Fabric AI on MacOS:
+        1. Install Homebrew if you haven't already:
+           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         
-        You can install Fabric AI with: `pip install fabric-ai`
+        2. Install Fabric AI using Homebrew:
+           brew install fabric-ai
+        
+        3. Make sure your PATH includes the Homebrew binary location
+        
+        After installation, restart your terminal and try running the app again.
         """)
         return False
     return True
@@ -58,3 +86,27 @@ def get_available_patterns():
     except Exception as e:
         st.error(f"Error loading patterns: {str(e)}")
         return []
+
+def run_fabric_pattern(pattern_name, youtube_url):
+    """Run a Fabric AI pattern on the YouTube URL."""
+    try:
+        # First get the transcript using fabric -y
+        cmd_transcript = f'fabric -y "{youtube_url}"'
+        transcript_result = subprocess.run(cmd_transcript, shell=True, capture_output=True, text=True)
+        
+        if transcript_result.returncode != 0:
+            st.error(f"Error getting YouTube transcript: {transcript_result.stderr}")
+            return None
+            
+        # Now pipe the transcript through the selected pattern
+        cmd_pattern = f'echo "{transcript_result.stdout}" | fabric -p {pattern_name}'
+        pattern_result = subprocess.run(cmd_pattern, shell=True, capture_output=True, text=True)
+        
+        if pattern_result.returncode != 0:
+            st.error(f"Error running fabric pattern: {pattern_result.stderr}")
+            return None
+            
+        return pattern_result.stdout
+    except Exception as e:
+        st.error(f"Error running fabric pattern: {str(e)}")
+        return None

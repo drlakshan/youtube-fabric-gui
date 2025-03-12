@@ -21,9 +21,10 @@ wheels/
 *.egg
 
 # Virtual Environment
-youtube_fabric_env/
 venv/
+env/
 ENV/
+youtube_fabric_env/
 
 # IDE
 .idea/
@@ -33,4 +34,15 @@ ENV/
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+
+# Streamlit
+.streamlit/
+
+# Temp files
+temp_input.txt

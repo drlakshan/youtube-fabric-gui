@@ -1,4 +1,4 @@
-streamlit
-fabric-ai
-pytube# .streamlit/config.toml
-
+streamlit>=1.10.0
+PyYAML>=6.0
+pillow>=9.0.0
+youtube-transcript-api>=0.6.0
